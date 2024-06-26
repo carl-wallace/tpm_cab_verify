@@ -10,7 +10,7 @@ structure of signed CAB files were available).
 The digest calculation performed by this crate is based on the digest calculation in the `cab_digest_calc` function in
 the [osslsigncode](https://github.com/mtrojnar/osslsigncode/) utility.
 
-SignedData verification is perform using the [certval](https://github.com/carl-wallace/rust-pki) crate built with the
-[webpki](https://crates.io/crates/webpki) trust anchors. 
+SignedData verification is performed using the [certval](https://github.com/carl-wallace/rust-pki) crate built with baked in
+Microsoft trust anchors. 
 
 Signatures on CAB files are validated to a Microsoft trust anchor that was downloaded from [here](https://download.microsoft.com/download/2/4/8/248D8A62-FCCD-475C-85E7-6ED59520FC0F/MicrosoftRootCertificateAuthority2011.cer).
