@@ -1,17 +1,29 @@
 //! Provides a serde-based decoder capable in support of verifying the TrustedTpm.cab file. This is
 //! not a general purpose CAB file verification utility.
 
-pub(crate) mod cab;
-pub(crate) mod timestamp;
-pub(crate) mod signer;
+#![forbid(unsafe_code)]
+#![warn(
+    clippy::mod_module_files,
+    clippy::unwrap_used,
+    rust_2018_idioms,
+    unused_lifetimes,
+    unused_qualifications
+)]
+#![doc = include_str!("../README.md")]
+
 pub(crate) mod asn1;
-mod roots;
+pub(crate) mod cab;
+pub(crate) mod roots;
+pub(crate) mod signer;
+pub(crate) mod timestamp;
 
 use authenticode::AuthenticodeSignature;
-use certval::CertificationPathSettings;
+use certval::{CertificationPathSettings, PkiEnvironment};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 /// The structure shown below is defined [here](https://learn.microsoft.com/en-us/previous-versions//bb267310(v=vs.85)?redirectedfrom=MSDN#cfheader).
+/// ```text
 /// struct CFHEADER
 /// {
 ///   u1  signature[4]  /* inet file signature */
@@ -41,6 +53,7 @@ use serde::{Deserialize, Serialize};
 ///   u1  szCabinetNext[];  /* (optional) name of next cabinet file */
 ///   u1  szDiskNext[];     /* (optional) name of next disk */
 /// };
+/// ```
 /// Based on limited observation, the szCabinetPrev, szDiskPrev, szCabinetNext, and szDiskNext are
 /// assumed to always be absent and the cb_cfheader, cb_cffolder, and cb_cfdata fields are assumed to
 /// always be present. The flags field will be inspected and if it is not consistent with this, i.e.,
@@ -87,19 +100,80 @@ pub struct CabVerifyParts {
 }
 
 impl CabVerifyParts {
-    pub async fn verify(&self, cps: &CertificationPathSettings) -> certval::Result<()> {
-        let authenticode = AuthenticodeSignature::from_bytes(&self.signed_data).unwrap();
+    /// Verifies a CAB file using the provided `PkiEnvironment` and `CertificationPathSettings`, both
+    /// of which can usually simply be default instances.
+    ///
+    /// The environment will be augmented to include a `TaSource` containing current trust anchors and a
+    /// `CertSource` containing files extracted from a `SignedData` message. The primary case where
+    /// non-default parameters are useful is validation of old TrustedTpm.cab files.
+    pub async fn verify(
+        &self,
+        pe: &mut PkiEnvironment,
+        cps: &CertificationPathSettings,
+    ) -> Result<()> {
+        if self.digest.is_empty() || self.signed_data.is_empty() {
+            error!("Either digest or signed_data was missing");
+            return Err(Error::MissingValue);
+        }
 
+        let authenticode = AuthenticodeSignature::from_bytes(&self.signed_data)?;
         self.verify_cab_digest(&authenticode)?;
-        let signature = self.verify_signer(&authenticode, cps)?;
-        self.verify_timestamp(&authenticode, &signature, cps).await?;
+        let signature = self.verify_signer(&authenticode, pe, cps)?;
+        self.verify_timestamp(&authenticode, &signature, pe, cps)
+            .await?;
 
         Ok(())
     }
 }
 
+/// Result type for tpm_cab_verify
+pub type Result<T> = core::result::Result<T, Error>;
 
+/// Error type for tpm_cab_verify
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum Error {
+    /// A calculated digest did not match an expected value, i.e., the digest calculated over a CAB file and the value from the SpcIndirectDataContent
+    DigestMismatch,
+    /// Some expected value was missing, i.e., Digest or SignedData was missing when verify was called
+    MissingValue,
+    /// Some feature is not currently supported, i.e., an algorithm
+    NotSupported,
+    /// Miscellaneous parse error
+    ParseError,
+    /// Signer's certificate not found in a SignedData message
+    SignerCertNotFound,
+    /// Failed to validate the signer's certificate
+    SignerCertNotValidated,
+    /// A field contained an unexpected value, i.e., content type was not ID_SIGNED_DATA
+    UnexpectedValue,
+    /// Propagate error information from the crates in the RustCrypto formats repo.
+    Asn1(der::Error),
+    /// Propagate error information from the authenticode crate
+    Authenticode(authenticode::AuthenticodeSignatureParseError),
+    /// Propagate error information from the certval crate.
+    Certval(certval::Error),
+    Io,
+}
 
-
-
-
+impl From<der::Error> for Error {
+    fn from(err: der::Error) -> Error {
+        Error::Asn1(err)
+    }
+}
+impl From<authenticode::AuthenticodeSignatureParseError> for Error {
+    fn from(err: authenticode::AuthenticodeSignatureParseError) -> Error {
+        Error::Authenticode(err)
+    }
+}
+impl From<certval::Error> for Error {
+    fn from(err: certval::Error) -> Error {
+        Error::Certval(err)
+    }
+}
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Error {
+        error!("std::io::Error: {err:?}");
+        Error::Io
+    }
+}

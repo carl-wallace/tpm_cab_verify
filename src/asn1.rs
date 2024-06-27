@@ -1,18 +1,16 @@
 //! Alternative decoders for SignedData and TstInfo to work around quirks in the TrustedTpm.cab contents
 
 use cms::{
-    content_info::CmsVersion, signed_data::{
-        DigestAlgorithmIdentifiers, EncapsulatedContentInfo,
-        SignerInfos,
-    }
+    content_info::CmsVersion,
+    signed_data::{DigestAlgorithmIdentifiers, EncapsulatedContentInfo, SignerInfos},
 };
 use der::{
-    Any, asn1::{Int, SetOfVec}, Sequence
+    asn1::{Int, SetOfVec},
+    Any, Sequence,
 };
 use x509_cert::{
-    ext::{
-        pkix::name::GeneralName, Extensions
-    }, impl_newtype
+    ext::{pkix::name::GeneralName, Extensions},
+    impl_newtype,
 };
 use x509_tsp::{Accuracy, MessageImprint, TsaPolicyId, TspVersion};
 
@@ -33,6 +31,7 @@ pub(crate) struct SignedData2 {
     pub signer_infos: SignerInfos,
 }
 
+/// Used in lieu of full support for all certificate and CRL types
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) struct AnySet(pub SetOfVec<Any>);
 impl_newtype!(AnySet, SetOfVec<Any>);
@@ -56,7 +55,7 @@ pub(crate) struct TstInfo2 {
     pub gen_time: Any,
     #[asn1(optional = "true")]
     pub accuracy: Option<Accuracy>,
-    #[asn1(default = "default_false_example")]
+    #[asn1(default = "default_false")]
     pub ordering: bool,
     #[asn1(optional = "true")]
     pub nonce: Option<Int>,
@@ -65,6 +64,8 @@ pub(crate) struct TstInfo2 {
     #[asn1(context_specific = "1", tag_mode = "IMPLICIT", optional = "true")]
     pub extensions: Option<Extensions>,
 }
-pub fn default_false_example() -> bool {
+
+/// Provide false as default for boolean fields
+pub(crate) fn default_false() -> bool {
     false
 }

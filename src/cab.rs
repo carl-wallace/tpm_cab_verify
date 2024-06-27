@@ -1,26 +1,28 @@
-use std::{
-    io::{Read, Seek, SeekFrom},
-};
+//! Parses a CAB file to obtain a digest of relevant components and the SignedData message that covers
+//! the CAB file
+
+use std::io::{Read, Seek, SeekFrom};
 
 use authenticode::AuthenticodeSignature;
 use log::error;
 
 use cms::content_info::ContentInfo;
-use x509_cert::{
-    der::{
-        Decode, ErrorKind
-    },
-};
+use x509_cert::der::{Decode, ErrorKind};
 
 use sha2::{Digest, Sha256};
 
-use certval::Error;
-use crate::{CfHeader, CabVerifyParts};
+use crate::{CabVerifyParts, CfHeader, Error, Result};
 
 impl CabVerifyParts {
-    pub fn new<R>(mut reader: R) -> anyhow::Result<Self>
-        where
-            R: Read + Seek,
+    /// Calculate a message digest to compare to the SpcIndirectDataContent included in the SignedData
+    /// message included in the CAB file.
+    ///
+    /// The digest calculation is based entirely on the digest calculation included in the
+    /// [osslsigncode](https://github.com/mtrojnar/osslsigncode/) utility. This implementation varies
+    /// slightly owing to limited usage context.
+    pub fn new<R>(mut reader: R) -> Result<Self>
+    where
+        R: Read + Seek,
     {
         let mut header = vec![00u8; 60];
         if let Err(e) = reader.read_exact(&mut header) {
@@ -32,7 +34,7 @@ impl CabVerifyParts {
             Ok(cf) => cf,
             Err(e) => {
                 error!("Failed to parse CfHeader: {e:?}");
-                return Err(e.into());
+                return Err(Error::ParseError);
             }
         };
 
@@ -87,7 +89,7 @@ impl CabVerifyParts {
             if want < chunk_size {
                 chunk.resize(want as usize, 0);
             }
-            reader.read_exact(&mut chunk).unwrap();
+            reader.read_exact(&mut chunk)?;
             hasher.update(&chunk);
 
             index = match reader.stream_position() {
@@ -145,14 +147,13 @@ impl CabVerifyParts {
         })
     }
 
-    pub(crate) fn verify_cab_digest(&self, authenticode: &AuthenticodeSignature) -> certval::Result<()> {
-        // compare the digest calculated over the CAB file contents with the value included in the
-        // SpcIndirectDataContent structure in the SignedData message.
+    /// Compares the digest calculated over the CAB file contents with the value included in the
+    /// SpcIndirectDataContent structure in the SignedData message.
+    pub(crate) fn verify_cab_digest(&self, authenticode: &AuthenticodeSignature) -> Result<()> {
         let cab_digest = authenticode.digest();
         if self.digest != cab_digest {
-            return Err(Error::ParseError);
+            return Err(Error::DigestMismatch);
         }
         Ok(())
     }
 }
-
