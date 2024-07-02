@@ -122,13 +122,7 @@ impl CabVerifyParts {
         let signer_cert_pdv = PDVCertificate::try_from(signer_cert.to_der()?.as_slice())?;
 
         let mut paths = vec![];
-        pe.get_paths_for_target(
-            pe,
-            &signer_cert_pdv,
-            &mut paths,
-            0,
-            cps.get_time_of_interest(),
-        )?;
+        pe.get_paths_for_target(&signer_cert_pdv, &mut paths, 0, cps.get_time_of_interest())?;
 
         for mut path in paths {
             let mut cpr = CertificationPathResults::new();
