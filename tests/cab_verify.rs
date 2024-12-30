@@ -15,7 +15,8 @@ async fn test_cab() {
     );
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
-    let cps = CertificationPathSettings::default();
+    let mut cps = CertificationPathSettings::default();
+    cps.set_time_of_interest(1720008737);
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
 
@@ -27,7 +28,8 @@ async fn test_altered_contents() {
     let cvp = CabVerifyParts::new(cursor).unwrap();
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
-    let cps = CertificationPathSettings::default();
+    let mut cps = CertificationPathSettings::default();
+    cps.set_time_of_interest(1720008737);
     assert!(cvp.verify(&mut pe, &cps).await.is_err());
 }
 
@@ -39,7 +41,8 @@ async fn test_cab2() {
     let cvp = CabVerifyParts::new(cursor).unwrap();
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
-    let cps = CertificationPathSettings::default();
+    let mut cps = CertificationPathSettings::default();
+    cps.set_time_of_interest(1720008737);
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
 
