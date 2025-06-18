@@ -98,7 +98,7 @@ impl CabVerifyParts {
             &enc_signed_attrs,
             signature,
             &sig_alg,
-            &signer_cert.tbs_certificate.subject_public_key_info,
+            signer_cert.tbs_certificate().subject_public_key_info(),
         )?;
 
         let msft_roots = get_msft_roots()?;
@@ -136,7 +136,7 @@ impl CabVerifyParts {
 
 /// Compare a SKID value with the value from the SKID extention in the certificate, if any
 pub(crate) fn skid_match(skid: &[u8], cert: &Certificate) -> bool {
-    if let Some(exts) = &cert.tbs_certificate.extensions {
+    if let Some(exts) = cert.tbs_certificate().extensions() {
         if let Some(skid_ext) = exts
             .iter()
             .find(|a| a.extn_id == ID_CE_SUBJECT_KEY_IDENTIFIER)
@@ -185,8 +185,8 @@ fn get_signer_cert<'a>(
                 }
             }
             SignerIdentifier::IssuerAndSerialNumber(iasn) => {
-                if cert.tbs_certificate.serial_number == iasn.serial_number
-                    && cert.tbs_certificate.issuer == iasn.issuer
+                if cert.tbs_certificate().serial_number() == &iasn.serial_number
+                    && cert.tbs_certificate().issuer() == &iasn.issuer
                 {
                     return Some(cert);
                 }

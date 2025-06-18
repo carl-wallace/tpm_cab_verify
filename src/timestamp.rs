@@ -151,7 +151,7 @@ impl CabVerifyParts {
             &enc_signed_attrs,
             signature,
             &signer_info.signature_algorithm,
-            &signer_cert.tbs_certificate.subject_public_key_info,
+            signer_cert.tbs_certificate().subject_public_key_info(),
         )?;
 
         let msft_roots = get_msft_roots()?;
@@ -160,7 +160,7 @@ impl CabVerifyParts {
         let mut cert_source = CertSource::default();
         for cert in certs {
             if cert != signer_cert {
-                let name = cert.tbs_certificate.subject.to_string();
+                let name = cert.tbs_certificate().subject().to_string();
                 let cf = CertFile {
                     filename: name,
                     bytes: cert.to_der()?,
@@ -200,8 +200,8 @@ fn get_signer_cert_vec(sid: &SignerIdentifier, certs: &Vec<Certificate>) -> Opti
                 }
             }
             SignerIdentifier::IssuerAndSerialNumber(iasn) => {
-                if cert.tbs_certificate.serial_number == iasn.serial_number
-                    && cert.tbs_certificate.issuer == iasn.issuer
+                if cert.tbs_certificate().serial_number() == &iasn.serial_number
+                    && cert.tbs_certificate().issuer() == &iasn.issuer
                 {
                     return Some(cert.clone());
                 }

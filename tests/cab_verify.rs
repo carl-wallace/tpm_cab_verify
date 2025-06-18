@@ -1,5 +1,6 @@
 use certval::{
     buffer_to_hex, CertFile, CertVector, CertificationPathSettings, PkiEnvironment, TaSource,
+    TimeOfInterest,
 };
 use tpm_cab_verify::CabVerifyParts;
 
@@ -16,7 +17,7 @@ async fn test_cab_06202024() {
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
     let mut cps = CertificationPathSettings::default();
-    cps.set_time_of_interest(1720008737);
+    cps.set_time_of_interest(TimeOfInterest::from_unix_secs(1720008737).unwrap());
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
 
@@ -29,7 +30,7 @@ async fn test_altered_contents() {
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
     let mut cps = CertificationPathSettings::default();
-    cps.set_time_of_interest(1720008737);
+    cps.set_time_of_interest(TimeOfInterest::from_unix_secs(1720008737).unwrap());
     assert!(cvp.verify(&mut pe, &cps).await.is_err());
 }
 
@@ -42,7 +43,7 @@ async fn test_cab_04152024() {
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
     let mut cps = CertificationPathSettings::default();
-    cps.set_time_of_interest(1720008737);
+    cps.set_time_of_interest(TimeOfInterest::from_unix_secs(1720008737).unwrap());
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
 
@@ -66,7 +67,7 @@ async fn test_cab_10232021() {
     pe.add_trust_anchor_source(Box::new(legacy_msft_root));
 
     let mut cps = CertificationPathSettings::default();
-    cps.set_time_of_interest(1635008378);
+    cps.set_time_of_interest(TimeOfInterest::from_unix_secs(1635008378).unwrap());
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
 
@@ -83,6 +84,6 @@ async fn test_cab_12242024() {
     let mut pe = PkiEnvironment::default();
     pe.populate_5280_pki_environment();
     let mut cps = CertificationPathSettings::default();
-    cps.set_time_of_interest(1735562393);
+    cps.set_time_of_interest(TimeOfInterest::from_unix_secs(1735562393).unwrap());
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
