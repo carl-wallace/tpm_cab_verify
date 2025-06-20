@@ -7,8 +7,8 @@ use const_oid::db::{
     rfc5911::ID_MESSAGE_DIGEST,
     rfc5912::{ID_SHA_256, SHA_256_WITH_RSA_ENCRYPTION},
 };
+use der::{Decode, Encode};
 use x509_cert::{
-    der::{Decode, Encode},
     spki::AlgorithmIdentifierOwned,
     Certificate,
 };
