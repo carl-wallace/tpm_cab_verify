@@ -127,7 +127,7 @@ impl CabVerifyParts {
         for mut path in paths {
             let mut cpr = CertificationPathResults::new();
             if pe.validate_path(pe, cps, &mut path, &mut cpr).is_ok() {
-                return Ok(signer_info.signature.clone().into_bytes());
+                return Ok(signer_info.signature.clone().into_bytes().to_vec());
             }
         }
         Err(Error::SignerCertNotValidated)
