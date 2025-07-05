@@ -35,7 +35,7 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 [[package]]
 name = "authenticode"
 version = "0.4.3-pre.0"
-source = "git+https://github.com/carl-wallace/authenticode-rs.git?branch=updates#c0fa5f4fdbdbc6ddc77df8de6a5a4441ab98c25c"
+source = "git+https://github.com/carl-wallace/authenticode-rs.git?branch=updates#1331fc365019f7b9263861a67078b172c0752fce"
 dependencies = [
  "cms",
  "const-oid",
