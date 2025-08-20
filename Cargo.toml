@@ -6,11 +6,12 @@ edition = "2021"
 [dependencies]
 cms = "0.3.0-pre.0"
 const-oid = { version = "0.10.1", features = ["db"] }
-der = { version = "0.8.0-rc.6", features = ["alloc", "derive", "oid", "pem"] }
-x509-cert = "0.3.0-rc.0"
+der = { version = "0.8.0-rc.8", features = ["alloc", "derive", "oid", "pem"] }
+x509-cert = "0.3.0-rc.1"
 x509-tsp = "0.2.0-pre"
 
-certval = { git = "https://github.com/carl-wallace/rust-pki.git", features = ["std", "webpki", "rsa"], branch = "updates"}
+#certval = { git = "https://github.com/carl-wallace/rust-pki.git", features = ["std", "webpki", "rsa"], branch = "depend_update"}
+certval = { path = "/Users/cwallace/devel/carl-wallace/rust-pki-cert-limbo/certval", features = ["std", "webpki", "rsa"]}
 
 sha2 = "0.11.0-rc.0"
 
@@ -41,6 +42,13 @@ x509-tsp     = { git = "https://github.com/RustCrypto/formats.git" }
 
 sha1         = { git = "https://github.com/RustCrypto/hashes.git" }
 sha2         = { git = "https://github.com/RustCrypto/hashes.git" }
+
+rsa              = { git = "https://github.com/RustCrypto/RSA.git" }
+elliptic-curve = { git = "https://github.com/RustCrypto/traits.git" }
+#ecdsa         = { git = "https://github.com/carl-wallace/signatures.git", branch = "aes_mgmt" }
+ecdsa         = { git = "https://github.com/RustCrypto/signatures.git" }
+
+crypto-bigint = { git = "https://github.com/RustCrypto/crypto-bigint.git" }
 
 # Miscellaneous repos
 authenticode = {git = "https://github.com/carl-wallace/authenticode-rs.git", branch = "updates"}
