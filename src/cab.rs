@@ -54,7 +54,10 @@ impl CabVerifyParts {
         hasher.update(cf.set_id.to_le_bytes());
         hasher.update(cf.ab_reserve.to_le_bytes());
 
-        assert_eq!(60, reader.stream_position().unwrap_or_default());
+        if 60 != reader.stream_position().unwrap_or_default() {
+            error!("Reader at unexpected position. Expected 60 but found {}", reader.stream_position().unwrap_or_default());
+            return Err(Error::ParseError);
+        }
 
         let mut folder = vec![0u8; 8];
         if let Err(e) = reader.read_exact(&mut folder) {
@@ -63,10 +66,11 @@ impl CabVerifyParts {
         }
         hasher.update(&folder);
 
-        assert_eq!(
-            cf.coff_files as u64,
-            reader.stream_position().unwrap_or_default()
-        );
+        if cf.coff_files as u64 != reader.stream_position().unwrap_or_default() {
+            error!("Reader at unexpected position. Expected {} but found {}", cf.coff_files, reader.stream_position().unwrap_or_default());
+            return Err(Error::ParseError);
+        }
+
         if let Err(e) = reader.seek(SeekFrom::Start(cf.coff_files as u64)) {
             error!(
                 "Failed to seek to start of file data at offset{}: {e:?}",
@@ -101,16 +105,25 @@ impl CabVerifyParts {
             };
         }
 
-        assert_eq!(
-            cf.sig_offset as u64,
-            reader.stream_position().unwrap_or_default()
-        );
+        if cf.sig_offset as u64 != reader.stream_position().unwrap_or_default() {
+            error!("Reader at unexpected position. Expected {} but found {}", cf.sig_offset, reader.stream_position().unwrap_or_default());
+            return Err(Error::ParseError);
+        }
+
         if let Err(e) = reader.seek(SeekFrom::Start(cf.sig_offset as u64)) {
             error!(
                 "Failed to seek to start of signature data at offset{}: {e:?}",
                 cf.sig_offset
             );
             return Err(e.into());
+        }
+
+        if cf.sig_len > 1_000_000_000 {
+            error!(
+                "The sig_len value ({}) exceeds the maximum limit of 1,000,000,000",
+                cf.sig_len
+            );
+            return Err(Error::ParseError);
         }
 
         let mut signed_data = vec![0u8; cf.sig_len as usize];

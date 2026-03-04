@@ -24,6 +24,8 @@ use certval::{
 use const_oid::db::rfc5912::ID_SHA_256;
 use log::error;
 
+pub const TIMESTAMP_OID: ObjectIdentifier = ObjectIdentifier::new_unwrap("1.3.6.1.4.1.311.3.3.1");
+
 impl CabVerifyParts {
     /// Verify the timestamp in the SignedData message from the CAB file and validate the signer's certificate.
     /// Timestamp verification does not consider the attribute certificates that may be present and
@@ -46,9 +48,7 @@ impl CabVerifyParts {
             }
         };
 
-        let timestamp_oid = ObjectIdentifier::new_unwrap("1.3.6.1.4.1.311.3.3.1");
-
-        let timestamp_attr = unsigned_attrs.iter().find(|a| a.oid == timestamp_oid);
+        let timestamp_attr = unsigned_attrs.iter().find(|a| a.oid == TIMESTAMP_OID);
         let timestamp = match timestamp_attr {
             Some(attr) => {
                 if let Some(val) = attr.values.get(0) {
@@ -168,7 +168,10 @@ impl CabVerifyParts {
                 cert_source.push(cf);
             }
         }
-        let _ = cert_source.initialize(cps);
+        if let Err(e) = cert_source.initialize(cps) {
+            error!("Failed to initialize cert source: {}", e);
+            return Err(Error::Certval(e));
+        }
         cert_source.find_all_partial_paths(pe, cps);
 
         pe.add_certificate_source(Box::new(cert_source));
@@ -191,7 +194,7 @@ impl CabVerifyParts {
 
 /// Searches for a given certificate in a vector of certificates extracted from a timestamp, i.e.,
 /// the list minus any attribute certificates.
-fn get_signer_cert_vec(sid: &SignerIdentifier, certs: &Vec<Certificate>) -> Option<Certificate> {
+fn get_signer_cert_vec(sid: &SignerIdentifier, certs: &[Certificate]) -> Option<Certificate> {
     for cert in certs {
         match sid {
             SignerIdentifier::SubjectKeyIdentifier(skid) => {

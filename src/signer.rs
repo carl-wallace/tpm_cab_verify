@@ -114,7 +114,10 @@ impl CabVerifyParts {
                 cert_source.push(cf);
             }
         }
-        let _ = cert_source.initialize(cps);
+        if let Err(e) = cert_source.initialize(cps) {
+            error!("Failed to initialize cert source: {}", e);
+            return Err(Error::Certval(e));
+        }
         cert_source.find_all_partial_paths(pe, cps);
 
         pe.add_certificate_source(Box::new(cert_source));
