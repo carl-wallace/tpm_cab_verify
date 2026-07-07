@@ -8,31 +8,30 @@ use const_oid::db::{
     rfc5912::{ID_SHA_256, SHA_256_WITH_RSA_ENCRYPTION},
 };
 use der::{Decode, Encode};
-use x509_cert::{
-    spki::AlgorithmIdentifierOwned,
-    Certificate,
-};
+use x509_cert::{spki::AlgorithmIdentifierOwned, Certificate};
 
 use sha2::{Digest, Sha256};
 
 use crate::{roots::get_msft_roots, CabVerifyParts, Error, Result};
 use certval::{
     CertFile, CertSource, CertVector, CertificationPathResults, CertificationPathSettings,
-    PDVCertificate, PkiEnvironment,
+    PDVCertificate, PkiEnvironment, TimeOfInterest,
 };
 use cms::signed_data::SignerIdentifier;
-use const_oid::db::rfc5280::ID_CE_SUBJECT_KEY_IDENTIFIER;
+use const_oid::db::rfc5280::{ID_CE_SUBJECT_KEY_IDENTIFIER, ID_KP_CODE_SIGNING};
 use const_oid::db::rfc5912::RSA_ENCRYPTION;
 use log::error;
 use x509_cert::attr::Attributes;
 
 impl CabVerifyParts {
-    /// Verify the signature in the SignedData message from the CAB file and validate the signer's certificate
-    pub(crate) fn verify_signer(
+    /// Verify the signature in the SignedData message from the CAB file and return the signature
+    /// bytes so the timestamp that covers them can be verified. Validation of the signer's
+    /// certificate is performed separately (see `validate_signer_cert`) so it can use the
+    /// timestamped signing time.
+    pub(crate) fn verify_signer_signature(
         &self,
         authenticode: &AuthenticodeSignature,
-        pe: &mut PkiEnvironment,
-        cps: &CertificationPathSettings,
+        pe: &PkiEnvironment,
     ) -> Result<Vec<u8>> {
         let signer_info = authenticode.signer_info();
 
@@ -101,6 +100,34 @@ impl CabVerifyParts {
             signer_cert.tbs_certificate().subject_public_key_info(),
         )?;
 
+        Ok(signer_info.signature.clone().into_bytes().to_vec())
+    }
+
+    /// Validate the CAB signer's certificate at the given time of interest, typically the genTime
+    /// from the verified timestamp that covers the signer's signature.
+    pub(crate) fn validate_signer_cert(
+        &self,
+        authenticode: &AuthenticodeSignature,
+        pe: &mut PkiEnvironment,
+        cps: &CertificationPathSettings,
+        time_of_interest: TimeOfInterest,
+    ) -> Result<()> {
+        let signer_info = authenticode.signer_info();
+        let mut certs = authenticode.certificates();
+        let signer_cert = match get_signer_cert(&signer_info.sid, &mut certs) {
+            Some(signer_cert) => signer_cert,
+            None => {
+                error!("Failed to find signer's certificate in SignedData");
+                return Err(Error::SignerCertNotFound);
+            }
+        };
+
+        // Require the id-kp-codeSigning EKU on the signer's certificate so that a compromised
+        // Microsoft-chained key issued for some other purpose cannot be used to sign a CAB file.
+        let mut cps = cps.clone();
+        cps.set_time_of_interest(time_of_interest);
+        cps.set_extended_key_usage(vec![ID_KP_CODE_SIGNING.to_string()]);
+
         let msft_roots = get_msft_roots()?;
         pe.add_trust_anchor_source(Box::new(msft_roots));
 
@@ -114,11 +141,11 @@ impl CabVerifyParts {
                 cert_source.push(cf);
             }
         }
-        if let Err(e) = cert_source.initialize(cps) {
+        if let Err(e) = cert_source.initialize(&cps) {
             error!("Failed to initialize cert source: {}", e);
             return Err(Error::Certval(e));
         }
-        cert_source.find_all_partial_paths(pe, cps);
+        cert_source.find_all_partial_paths(pe, &cps);
 
         pe.add_certificate_source(Box::new(cert_source));
 
@@ -129,8 +156,8 @@ impl CabVerifyParts {
 
         for mut path in paths {
             let mut cpr = CertificationPathResults::new();
-            if pe.validate_path(pe, cps, &mut path, &mut cpr).is_ok() {
-                return Ok(signer_info.signature.clone().into_bytes().to_vec());
+            if pe.validate_path(pe, &cps, &mut path, &mut cpr).is_ok() {
+                return Ok(());
             }
         }
         Err(Error::SignerCertNotValidated)

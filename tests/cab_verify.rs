@@ -21,6 +21,20 @@ async fn test_cab_06202024() {
     cvp.verify(&mut pe, &cps).await.unwrap();
 }
 
+// Verify a CAB file using entirely default settings, i.e., without pinning a time of interest.
+// The signing certificates in this CAB have expired; verification succeeds because the signer and
+// timestamp certificates are validated at the genTime from the verified timestamp.
+#[tokio::test]
+async fn test_cab_default_settings() {
+    let trusted_tpm = include_bytes!("../tests/examples/TrustedTpm-06202024.cab");
+    let cursor = std::io::Cursor::new(trusted_tpm);
+    let cvp = CabVerifyParts::new(cursor).unwrap();
+    let mut pe = PkiEnvironment::default();
+    pe.populate_5280_pki_environment();
+    let cps = CertificationPathSettings::default();
+    cvp.verify(&mut pe, &cps).await.unwrap();
+}
+
 // Attempt to verify a CAB file that has had contents altered (setup.cmd filename was changed to Setup.cmd)
 #[tokio::test]
 async fn test_altered_contents() {
