@@ -124,9 +124,12 @@ impl CabVerifyParts {
 
         // Require the id-kp-codeSigning EKU on the signer's certificate so that a compromised
         // Microsoft-chained key issued for some other purpose cannot be used to sign a CAB file.
+        // Enabling PS_EXTENDED_KEY_USAGE_PATH also enforces the EKU intersection across the whole
+        // path, so an intermediate that omits codeSigning narrows the usage as RFC 5280 intends.
         let mut cps = cps.clone();
         cps.set_time_of_interest(time_of_interest);
         cps.set_extended_key_usage(vec![ID_KP_CODE_SIGNING.to_string()]);
+        cps.set_extended_key_usage_path(true);
 
         let msft_roots = get_msft_roots()?;
         pe.add_trust_anchor_source(Box::new(msft_roots));

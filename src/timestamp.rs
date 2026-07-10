@@ -181,10 +181,13 @@ impl CabVerifyParts {
         )?;
 
         // Validate the timestamp signer's certificate at the time the timestamp was produced,
-        // requiring the id-kp-timeStamping EKU on the signer's certificate.
+        // requiring the id-kp-timeStamping EKU on the signer's certificate. Enabling
+        // PS_EXTENDED_KEY_USAGE_PATH also enforces the EKU intersection across the whole path,
+        // so an intermediate that omits timeStamping narrows the usage as RFC 5280 intends.
         let mut cps = cps.clone();
         cps.set_time_of_interest(gen_time);
         cps.set_extended_key_usage(vec![ID_KP_TIME_STAMPING.to_string()]);
+        cps.set_extended_key_usage_path(true);
 
         let msft_roots = get_msft_roots()?;
         pe.add_trust_anchor_source(Box::new(msft_roots));
