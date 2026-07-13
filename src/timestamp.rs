@@ -281,6 +281,7 @@ fn get_signer_cert_vec(sid: &SignerIdentifier, certs: &[Certificate]) -> Option<
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::*;
     use der::Any;
 
