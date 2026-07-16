@@ -104,8 +104,13 @@ impl CabVerifyParts {
     /// of which can usually simply be default instances.
     ///
     /// The environment will be augmented to include a `TaSource` containing current trust anchors and a
-    /// `CertSource` containing files extracted from a `SignedData` message. The primary case where
-    /// non-default parameters are useful is validation of old TrustedTpm.cab files.
+    /// `CertSource` containing files extracted from a `SignedData` message.
+    ///
+    /// The certificates of the CAB signer and the timestamp signer are validated at the genTime
+    /// asserted in the (verified) RFC 3161 timestamp rather than at the time of interest from `cps`,
+    /// mirroring how Windows treats timestamped Authenticode signatures. This allows CAB files to
+    /// continue to verify after the short-lived signing certificate expires, including old
+    /// TrustedTpm.cab files, without setting a custom time of interest.
     pub async fn verify(
         &self,
         pe: &mut PkiEnvironment,
@@ -118,9 +123,14 @@ impl CabVerifyParts {
 
         let authenticode = AuthenticodeSignature::from_bytes(&self.signed_data)?;
         self.verify_cab_digest(&authenticode)?;
-        let signature = self.verify_signer(&authenticode, pe, cps)?;
-        self.verify_timestamp(&authenticode, &signature, pe, cps)
+        // Cryptographically verify the signer's signature over the signed attributes, then verify
+        // the timestamp that covers that signature to establish a trusted signing time.
+        let signature = self.verify_signer_signature(&authenticode, pe)?;
+        let signing_time = self
+            .verify_timestamp(&authenticode, &signature, pe, cps)
             .await?;
+        // Validate the signer's certificate at the timestamped signing time.
+        self.validate_signer_cert(&authenticode, pe, cps, signing_time)?;
 
         Ok(())
     }
@@ -145,6 +155,8 @@ pub enum Error {
     SignerCertNotFound,
     /// Failed to validate the signer's certificate
     SignerCertNotValidated,
+    /// The genTime in a timestamp is later than the current time
+    TimestampInFuture,
     /// A field contained an unexpected value, i.e., content type was not ID_SIGNED_DATA
     UnexpectedValue,
     /// Propagate error information from the crates in the RustCrypto formats repo.

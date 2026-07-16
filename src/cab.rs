@@ -30,13 +30,16 @@ impl CabVerifyParts {
             return Err(e.into());
         }
 
-        let cf: CfHeader = match bincode::deserialize(&header) {
-            Ok(cf) => cf,
-            Err(e) => {
-                error!("Failed to parse CfHeader: {e:?}");
-                return Err(Error::ParseError);
-            }
-        };
+        let cf: CfHeader =
+            match bincode::serde::decode_from_slice(&header, bincode::config::legacy())
+                .map(|(cf, _)| cf)
+            {
+                Ok(cf) => cf,
+                Err(e) => {
+                    error!("Failed to parse CfHeader: {e:?}");
+                    return Err(Error::ParseError);
+                }
+            };
 
         let mut hasher = Sha256::new();
 
@@ -54,7 +57,13 @@ impl CabVerifyParts {
         hasher.update(cf.set_id.to_le_bytes());
         hasher.update(cf.ab_reserve.to_le_bytes());
 
-        assert_eq!(60, reader.stream_position().unwrap_or_default());
+        if 60 != reader.stream_position().unwrap_or_default() {
+            error!(
+                "Reader at unexpected position. Expected 60 but found {}",
+                reader.stream_position().unwrap_or_default()
+            );
+            return Err(Error::ParseError);
+        }
 
         let mut folder = vec![0u8; 8];
         if let Err(e) = reader.read_exact(&mut folder) {
@@ -63,10 +72,15 @@ impl CabVerifyParts {
         }
         hasher.update(&folder);
 
-        assert_eq!(
-            cf.coff_files as u64,
-            reader.stream_position().unwrap_or_default()
-        );
+        if cf.coff_files as u64 != reader.stream_position().unwrap_or_default() {
+            error!(
+                "Reader at unexpected position. Expected {} but found {}",
+                cf.coff_files,
+                reader.stream_position().unwrap_or_default()
+            );
+            return Err(Error::ParseError);
+        }
+
         if let Err(e) = reader.seek(SeekFrom::Start(cf.coff_files as u64)) {
             error!(
                 "Failed to seek to start of file data at offset{}: {e:?}",
@@ -101,16 +115,40 @@ impl CabVerifyParts {
             };
         }
 
-        assert_eq!(
-            cf.sig_offset as u64,
-            reader.stream_position().unwrap_or_default()
-        );
+        if cf.sig_offset as u64 != reader.stream_position().unwrap_or_default() {
+            error!(
+                "Reader at unexpected position. Expected {} but found {}",
+                cf.sig_offset,
+                reader.stream_position().unwrap_or_default()
+            );
+            return Err(Error::ParseError);
+        }
+
+        let stream_len = match reader.seek(SeekFrom::End(0)) {
+            Ok(len) => len,
+            Err(e) => {
+                error!("Failed to determine stream length: {e:?}");
+                return Err(e.into());
+            }
+        };
+
         if let Err(e) = reader.seek(SeekFrom::Start(cf.sig_offset as u64)) {
             error!(
                 "Failed to seek to start of signature data at offset{}: {e:?}",
                 cf.sig_offset
             );
             return Err(e.into());
+        }
+
+        // Bound the allocation to the bytes actually remaining after sig_offset so a corrupt
+        // header cannot cause a huge allocation.
+        let remaining = stream_len.saturating_sub(cf.sig_offset as u64);
+        if cf.sig_len as u64 > remaining {
+            error!(
+                "The sig_len value ({}) exceeds the {} bytes remaining after sig_offset ({})",
+                cf.sig_len, remaining, cf.sig_offset
+            );
+            return Err(Error::ParseError);
         }
 
         let mut signed_data = vec![0u8; cf.sig_len as usize];

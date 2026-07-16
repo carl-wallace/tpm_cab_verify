@@ -14,3 +14,9 @@ SignedData verification is performed using the [certval](https://github.com/carl
 Microsoft trust anchors. 
 
 Signatures on CAB files are validated to a Microsoft trust anchor that was downloaded from [here](https://download.microsoft.com/download/2/4/8/248D8A62-FCCD-475C-85E7-6ED59520FC0F/MicrosoftRootCertificateAuthority2011.cer).
+
+Certificates of the CAB signer and the timestamp signer are validated at the genTime asserted in the verified RFC 3161
+timestamp rather than at the current time, mirroring how Windows treats timestamped Authenticode signatures. This allows
+CAB files to continue to verify after their short-lived signing certificates expire, without callers pinning a time of
+interest. Timestamps claiming a time in the future are rejected, the CAB signer's certificate must assert the
+id-kp-codeSigning EKU, and the timestamp signer's certificate must assert id-kp-timeStamping.
