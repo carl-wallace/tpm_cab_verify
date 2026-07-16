@@ -30,13 +30,16 @@ impl CabVerifyParts {
             return Err(e.into());
         }
 
-        let cf: CfHeader = match bincode::deserialize(&header) {
-            Ok(cf) => cf,
-            Err(e) => {
-                error!("Failed to parse CfHeader: {e:?}");
-                return Err(Error::ParseError);
-            }
-        };
+        let cf: CfHeader =
+            match bincode::serde::decode_from_slice(&header, bincode::config::legacy())
+                .map(|(cf, _)| cf)
+            {
+                Ok(cf) => cf,
+                Err(e) => {
+                    error!("Failed to parse CfHeader: {e:?}");
+                    return Err(Error::ParseError);
+                }
+            };
 
         let mut hasher = Sha256::new();
 
