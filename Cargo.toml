@@ -28,12 +28,7 @@ tokio = { version = "1.52.4", features = ["full", "time", "rt-multi-thread"]}
 cmpv2        = { git = "https://github.com/RustCrypto/formats.git" }
 cms          = { git = "https://github.com/RustCrypto/formats.git" }
 crmf         = { git = "https://github.com/RustCrypto/formats.git" }
-der          = { git = "https://github.com/RustCrypto/formats.git" }
-der_derive   = { git = "https://github.com/RustCrypto/formats.git" }
 pkcs1        = { git = "https://github.com/RustCrypto/formats.git" }
-sec1         = { git = "https://github.com/RustCrypto/formats.git" }
-spki         = { git = "https://github.com/RustCrypto/formats.git" }
-x509-cert    = { git = "https://github.com/RustCrypto/formats.git" }
 x509-ocsp    = { git = "https://github.com/RustCrypto/formats.git" }
 x509-tsp     = { git = "https://github.com/RustCrypto/formats.git" }
 
