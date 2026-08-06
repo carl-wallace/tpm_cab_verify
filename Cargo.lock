@@ -407,7 +407,8 @@ dependencies = [
 [[package]]
 name = "der"
 version = "0.8.1"
-source = "git+https://github.com/RustCrypto/formats.git#6cab00aeb9832b57902cb6fd38173f69572e5a67"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a69dedd701da44b0536442edf09c81a64b0ab97a7a4a5e3d1971f00027cbc63d"
 dependencies = [
  "const-oid",
  "der_derive",
@@ -419,7 +420,8 @@ dependencies = [
 [[package]]
 name = "der_derive"
 version = "0.8.0"
-source = "git+https://github.com/RustCrypto/formats.git#6cab00aeb9832b57902cb6fd38173f69572e5a67"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59600e2c2d636fde9b65e99cc6445ac770c63d3628195ff39932b8d6d7409903"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1703,7 +1705,8 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 [[package]]
 name = "sec1"
 version = "0.8.1"
-source = "git+https://github.com/RustCrypto/formats.git#6cab00aeb9832b57902cb6fd38173f69572e5a67"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d56d437c2f19203ce5f7122e507831de96f3d2d4d3be5af44a0b0a09d8a80e4d"
 dependencies = [
  "base16ct",
  "ctutils",
@@ -1890,7 +1893,8 @@ checksum = "3763264f6b73151db08c50ff20d7d8a0b8796e021cdea7ceedad07b80155fa0e"
 [[package]]
 name = "spki"
 version = "0.8.0"
-source = "git+https://github.com/RustCrypto/formats.git#6cab00aeb9832b57902cb6fd38173f69572e5a67"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d9efca8738c78ee9484207732f728b1ef517bbb1833d6fc0879ca898a522f6f"
 dependencies = [
  "base64ct",
  "der",
@@ -2510,7 +2514,8 @@ dependencies = [
 [[package]]
 name = "x509-cert"
 version = "0.3.0"
-source = "git+https://github.com/RustCrypto/formats.git#6cab00aeb9832b57902cb6fd38173f69572e5a67"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "105ef4642d9cb137ef83d623d0e4bf08b8adf69e9918ca904a174adb6d3d038b"
 dependencies = [
  "const-oid",
  "der",
