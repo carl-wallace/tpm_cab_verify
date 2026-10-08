@@ -7,7 +7,7 @@ use const_oid::db::{
     rfc5911::ID_MESSAGE_DIGEST,
     rfc5912::{ID_SHA_256, SHA_256_WITH_RSA_ENCRYPTION},
 };
-use der::{Decode, Encode};
+use der::{asn1::BitString, Decode, Encode};
 use x509_cert::{spki::AlgorithmIdentifierOwned, Certificate};
 
 use sha2::{Digest, Sha256};
@@ -95,7 +95,7 @@ impl CabVerifyParts {
         pe.verify_signature_message(
             pe,
             &enc_signed_attrs,
-            signature,
+            &BitString::from_bytes(signature)?,
             &sig_alg,
             signer_cert.tbs_certificate().subject_public_key_info(),
         )?;
@@ -157,9 +157,9 @@ impl CabVerifyParts {
         let mut paths = vec![];
         pe.get_paths_for_target(&signer_cert_pdv, &mut paths, 0, cps.get_time_of_interest())?;
 
-        for mut path in paths {
+        for path in paths {
             let mut cpr = CertificationPathResults::new();
-            if pe.validate_path(pe, &cps, &mut path, &mut cpr).is_ok() {
+            if pe.validate_path(pe, &cps, &path, &mut cpr).is_ok() {
                 return Ok(());
             }
         }
