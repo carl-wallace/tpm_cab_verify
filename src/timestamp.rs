@@ -29,7 +29,7 @@ use const_oid::db::rfc5911::{
     ID_AA_SIGNING_CERTIFICATE_V_2, ID_CONTENT_TYPE, ID_SIGNED_DATA, ID_SIGNING_TIME,
 };
 use const_oid::db::rfc5912::{ID_SHA_256, ID_SHA_384, ID_SHA_512};
-use der::{Tag, Tagged};
+use der::{asn1::BitString, Tag, Tagged};
 use log::{error, warn};
 use x509_tsp::TspVersion;
 
@@ -208,7 +208,7 @@ impl CabVerifyParts {
         pe.verify_signature_message(
             pe,
             &enc_signed_attrs,
-            signature,
+            &BitString::from_bytes(signature)?,
             &signer_info.signature_algorithm,
             signer_cert.tbs_certificate().subject_public_key_info(),
         )?;
@@ -252,9 +252,9 @@ impl CabVerifyParts {
         let mut paths = vec![];
         pe.get_paths_for_target(&signer_cert_pdv, &mut paths, 0, cps.get_time_of_interest())?;
 
-        for mut path in paths {
+        for path in paths {
             let mut cpr = CertificationPathResults::new();
-            if pe.validate_path(pe, &cps, &mut path, &mut cpr).is_ok() {
+            if pe.validate_path(pe, &cps, &path, &mut cpr).is_ok() {
                 return Ok(gen_time);
             }
         }
