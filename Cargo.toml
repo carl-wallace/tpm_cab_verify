@@ -22,13 +22,12 @@ tokio = { version = "1.52.4", features = ["full", "time", "rt-multi-thread"]}
 
 [patch.crates-io]
 # The formats 0.3-pre line isn't on crates.io yet and is internally git-coupled
-# (x509-tsp -> cmpv2 pins the whole stack), so keep all of formats on git.
-# Everything else (hashes, curves, RSA, signatures, crypto-bigint) now resolves
-# from crates.io stable and no longer needs a patch.
+# (x509-tsp -> cmpv2 pins the whole stack), so keep that stack on git.
+# Everything else (pkcs1, hashes, curves, RSA, signatures, crypto-bigint) resolves
+# from crates.io and needs no patch.
 cmpv2        = { git = "https://github.com/RustCrypto/formats.git" }
 cms          = { git = "https://github.com/RustCrypto/formats.git" }
 crmf         = { git = "https://github.com/RustCrypto/formats.git" }
-pkcs1        = { git = "https://github.com/RustCrypto/formats.git" }
 x509-ocsp    = { git = "https://github.com/RustCrypto/formats.git" }
 x509-tsp     = { git = "https://github.com/RustCrypto/formats.git" }
 
