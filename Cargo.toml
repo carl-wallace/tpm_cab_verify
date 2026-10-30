@@ -10,7 +10,7 @@ der = { version = "0.8.1", features = ["alloc", "derive", "oid", "pem"] }
 x509-cert = "0.3.0"
 x509-tsp = "0.2.0-pre"
 
-certval = { version = "0.2.0-rc.1", features = ["std", "webpki", "rsa"] }
+certval = { version = "0.2.0-rc.1", default-features = false, features = ["std", "rsa"] }
 
 sha2 = "0.11.0"
 
