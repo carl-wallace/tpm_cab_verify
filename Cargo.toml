@@ -10,7 +10,7 @@ der = { version = "0.8.1", features = ["alloc", "derive", "oid", "pem"] }
 x509-cert = "0.3.0"
 x509-tsp = "0.2.0-pre"
 
-certval = { git = "https://github.com/carl-wallace/rust-pki.git", features = ["std", "webpki", "rsa"], branch = "main"}
+certval = { version = "0.2.0-rc.1", features = ["std", "webpki", "rsa"] }
 
 sha2 = "0.11.0"
 
@@ -28,7 +28,6 @@ tokio = { version = "1.52.4", features = ["full", "time", "rt-multi-thread"]}
 cmpv2        = { git = "https://github.com/RustCrypto/formats.git" }
 cms          = { git = "https://github.com/RustCrypto/formats.git" }
 crmf         = { git = "https://github.com/RustCrypto/formats.git" }
-x509-ocsp    = { git = "https://github.com/RustCrypto/formats.git" }
 x509-tsp     = { git = "https://github.com/RustCrypto/formats.git" }
 
 authenticode = {git = "https://github.com/carl-wallace/authenticode-rs.git", branch = "updates"}
