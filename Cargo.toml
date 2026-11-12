@@ -10,7 +10,7 @@ der = { version = "0.8.1", features = ["alloc", "derive", "oid", "pem"] }
 x509-cert = "0.3.0"
 x509-tsp = "0.2.0-pre"
 
-certval = { version = "0.2.0-rc.1", default-features = false, features = ["std", "rsa"] }
+certval = { version = "0.2.0-rc.3", default-features = false, features = ["std", "rsa"] }
 
 sha2 = "0.11.0"
 
@@ -26,7 +26,6 @@ tokio = { version = "1.52.4", features = ["full", "time", "rt-multi-thread"]}
 # Everything else (pkcs1, hashes, curves, RSA, signatures, crypto-bigint) resolves
 # from crates.io and needs no patch.
 cmpv2        = { git = "https://github.com/RustCrypto/formats.git" }
-cms          = { git = "https://github.com/RustCrypto/formats.git" }
 crmf         = { git = "https://github.com/RustCrypto/formats.git" }
 x509-tsp     = { git = "https://github.com/RustCrypto/formats.git" }
 
