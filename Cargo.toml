@@ -18,6 +18,8 @@ authenticode = "0.6.0"
 bincode = { version = "2.0", features = ["serde"] }
 log = "0.4.33"
 serde = { version = "1.0.228", features = ["derive"] }
+
+[dev-dependencies]
 tokio = { version = "1.52.4", features = ["full", "time", "rt-multi-thread"]}
 
 [patch.crates-io]
